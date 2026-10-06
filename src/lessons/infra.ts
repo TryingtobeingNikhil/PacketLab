@@ -25,7 +25,7 @@ export const infra: Lesson[] = [
         say: 'The first user asks for logo.png. The edge does not have it yet (a cache miss), so it fetches it from the origin, stores a copy and returns it.',
         msgs: [
           { from: 'u1', to: 'edge', label: 'GET /logo.png', c: 'blue' },
-          { from: 'edge', to: 'origin', label: 'MISS → fetch', c: 'amber' },
+          { from: 'edge', to: 'origin', label: 'MISS → fetch', why: "The edge doesn't have it yet, so it fetches it from the far-away origin.", c: 'amber' },
           { from: 'origin', to: 'edge', label: 'logo.png (max-age=86400)', c: 'green' },
           { from: 'edge', to: 'u1', label: 'logo.png', c: 'green' },
         ],
@@ -35,7 +35,7 @@ export const infra: Lesson[] = [
         say: 'The next user asks for the same file. Cache hit: answered from Mumbai in a few milliseconds, and the origin never even hears about it.',
         msgs: [
           { from: 'u2', to: 'edge', label: 'GET /logo.png', c: 'blue' },
-          { from: 'edge', to: 'u2', label: 'HIT (8 ms)', c: 'green' },
+          { from: 'edge', to: 'u2', label: 'HIT (8 ms)', why: 'Cache hit: answered from nearby in milliseconds. The origin never hears about it.', c: 'green' },
         ],
       },
       {
@@ -86,7 +86,7 @@ export const infra: Lesson[] = [
         say: 'The balancer constantly health‑checks each backend. App 2 stops answering /healthz, so it is pulled out of the pool and receives no new traffic.',
         msgs: [
           { from: 'lb', to: 's2', label: 'GET /healthz', c: 'gray' },
-          { from: 's2', to: 'lb', label: 'timeout', c: 'red', drop: true },
+          { from: 's2', to: 'lb', label: 'timeout', why: "App 2 doesn't answer its health check, so the balancer stops sending it traffic.", c: 'red', drop: true },
           { from: 'c', to: 's1', label: 'req 4', c: 'blue' },
           { from: 'c', to: 's3', label: 'req 5', c: 'violet' },
         ],

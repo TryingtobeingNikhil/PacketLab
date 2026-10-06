@@ -19,7 +19,7 @@ interface Props {
 }
 
 const R = 30
-const INSETS = { left: 40, right: 70, top: 96, bottom: 40 }
+const INSETS = { left: 40, right: 70, top: 40, bottom: 150 }
 
 export function LessonCanvas({ lesson, stepIdx, timeline, paused, speed, replay, progressEl, onActive, onDone }: Props) {
   const step = lesson.steps[stepIdx]
@@ -126,12 +126,11 @@ export function LessonCanvas({ lesson, stepIdx, timeline, paused, speed, replay,
 
   const involved = new Set<string>(step?.focus ?? [])
   if (step?.focus) for (const tm of timeline.msgs) tm.path.forEach((n) => involved.add(n))
-  const lessonNo = lesson.id
 
   return (
     <>
       <div ref={wrap} style={{ display: 'none' }} />
-      <Viewport ref={vp} bounds={bounds} insets={portrait ? { left: 20, right: 20, top: 30, bottom: 20 } : INSETS} fitKey={`${lesson.id}:${portrait}`} maxFitZoom={1.35}>
+      <Viewport ref={vp} bounds={bounds} insets={portrait ? { left: 20, right: 20, top: 30, bottom: 90 } : INSETS} fitKey={`${lesson.id}:${portrait}`} maxFitZoom={1.35}>
         <svg className="wires" width="1" height="1">
           {lesson.links.map(([a, b, label]) => {
             const p = pos[a]
@@ -198,10 +197,6 @@ export function LessonCanvas({ lesson, stepIdx, timeline, paused, speed, replay,
         )}
         {packets}
       </Viewport>
-      <div className="canvas-title" key={lessonNo}>
-        <span className="eyebrow">{stepIdx + 1 <= lesson.steps.length ? `step ${stepIdx + 1} of ${lesson.steps.length}` : 'summary'}</span>
-        <h1>{lesson.title}</h1>
-      </div>
       <div className="canvas-tools">
         <button className="ibtn sm" onClick={() => vp.current?.zoomBy(1.2)} aria-label="Zoom in"><Plus size={15} /></button>
         <button className="ibtn sm" onClick={() => vp.current?.zoomBy(1 / 1.2)} aria-label="Zoom out"><Minus size={15} /></button>

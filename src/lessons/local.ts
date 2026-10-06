@@ -26,13 +26,13 @@ export const local: Lesson[] = [
       },
       {
         say: 'Host A sends a frame to Host C. The switch notes that A lives on port 1 (it learns from the source address) but it has no idea where C is yet.',
-        msgs: [{ from: 'a', to: 'sw', label: 'to C', c: 'blue', h: { l2: { src_mac: MAC.a, dst_mac: MAC.c, type: 'IPv4' } } }],
+        msgs: [{ from: 'a', to: 'sw', label: 'to C', why: 'A sends a frame to C. The switch writes down that A lives on port 1.', c: 'blue', h: { l2: { src_mac: MAC.a, dst_mac: MAC.c, type: 'IPv4' } } }],
         tables: { sw: macTable([[MAC.a, '1']], [0]) },
       },
       {
         say: 'Unknown destination? The switch floods the frame out of every other port. B and D see it, notice it is not for them, and quietly throw it away.',
         msgs: [
-          { from: 'sw', to: 'b', label: 'flood', c: 'gray' },
+          { from: 'sw', to: 'b', label: 'flood', why: "The switch doesn't know where C is yet, so it copies the frame to every other port.", c: 'gray' },
           { from: 'sw', to: 'c', label: 'flood', c: 'blue', par: true },
           { from: 'sw', to: 'd', label: 'flood', c: 'gray', par: true },
         ],
@@ -40,7 +40,7 @@ export const local: Lesson[] = [
       },
       {
         say: 'C replies. Now the switch learns C is on port 3, and it already knows A is on port 1, so the reply goes out of exactly one port.',
-        msgs: [{ from: 'c', to: 'a', label: 'reply to A', c: 'green', h: { l2: { src_mac: MAC.c, dst_mac: MAC.a } } }],
+        msgs: [{ from: 'c', to: 'a', label: 'reply to A', why: 'C replies. Now the switch learns C is on port 3, and sends the reply out of port 1 only.', c: 'green', h: { l2: { src_mac: MAC.c, dst_mac: MAC.a } } }],
         tables: { sw: macTable([[MAC.a, '1'], [MAC.c, '3']], [1]) },
       },
       {
@@ -83,7 +83,7 @@ export const local: Lesson[] = [
       {
         say: 'A shouts to everyone on the local network: “Who has 10.0.0.9? Tell 10.0.0.5.” The destination MAC is ff:ff:ff:ff:ff:ff, the broadcast address, so the switch floods it everywhere.',
         msgs: [
-          { from: 'a', to: 'sw', label: 'Who has 10.0.0.9?', c: 'amber', h: { l2: { src_mac: MAC.a, dst_mac: MAC.bc, type: 'ARP' }, x: { op: 'request', target_ip: '10.0.0.9', sender_ip: '10.0.0.5' } } },
+          { from: 'a', to: 'sw', label: 'Who has 10.0.0.9?', why: 'A shouts to everyone: “Who has 10.0.0.9?” It knows the IP address but not the MAC address.', c: 'amber', h: { l2: { src_mac: MAC.a, dst_mac: MAC.bc, type: 'ARP' }, x: { op: 'request', target_ip: '10.0.0.9', sender_ip: '10.0.0.5' } } },
           { from: 'sw', to: 'b', label: 'broadcast', c: 'amber' },
           { from: 'sw', to: 'c', label: 'broadcast', c: 'amber', par: true },
           { from: 'sw', to: 'gw', label: 'broadcast', c: 'amber', par: true },
@@ -91,12 +91,12 @@ export const local: Lesson[] = [
       },
       {
         say: 'Only B owns that address, so only B answers, directly to A: “10.0.0.9 is at bb:bb:bb:00:00:0b.”',
-        msgs: [{ from: 'b', to: 'a', label: '10.0.0.9 is at bb:…:0b', c: 'green', h: { l2: { src_mac: MAC.b, dst_mac: MAC.a, type: 'ARP' }, x: { op: 'reply', sender_ip: '10.0.0.9', sender_mac: MAC.b } } }],
+        msgs: [{ from: 'b', to: 'a', label: '10.0.0.9 is at bb:…:0b', why: 'Only B owns that address, so only B answers, straight back to A.', c: 'green', h: { l2: { src_mac: MAC.b, dst_mac: MAC.a, type: 'ARP' }, x: { op: 'reply', sender_ip: '10.0.0.9', sender_mac: MAC.b } } }],
         tables: { a: { title: 'A’s ARP cache', cols: ['IP', 'MAC'], rows: [['10.0.0.9', MAC.b]], fresh: [0] } },
       },
       {
         say: 'A caches the answer and finally sends the real packet. Next time, no shouting needed.',
-        msgs: [{ from: 'a', to: 'b', label: 'IP packet', c: 'blue', h: { l2: { src_mac: MAC.a, dst_mac: MAC.b }, l3: { src: '10.0.0.5', dst: '10.0.0.9' } } }],
+        msgs: [{ from: 'a', to: 'b', label: 'IP packet', why: "Now A knows B's MAC address and can send the real packet directly.", c: 'blue', h: { l2: { src_mac: MAC.a, dst_mac: MAC.b }, l3: { src: '10.0.0.5', dst: '10.0.0.9' } } }],
         tables: { a: { title: 'A’s ARP cache', cols: ['IP', 'MAC'], rows: [['10.0.0.9', MAC.b]] } },
       },
       {
@@ -142,23 +142,23 @@ export const local: Lesson[] = [
       {
         say: 'D — Discover. The laptop broadcasts: “Is there a DHCP server out there?” Its source IP is 0.0.0.0 because it has none.',
         msgs: [
-          { from: 'new', to: 'sw', label: 'DISCOVER', c: 'amber', h: { l2: { dst_mac: MAC.bc }, l3: { src: '0.0.0.0', dst: '255.255.255.255' }, l4: { proto: 'UDP', src_port: '68', dst_port: '67' } } },
+          { from: 'new', to: 'sw', label: 'DISCOVER', why: 'The new laptop has no address yet, so it shouts: “Is there a DHCP server here?”', c: 'amber', h: { l2: { dst_mac: MAC.bc }, l3: { src: '0.0.0.0', dst: '255.255.255.255' }, l4: { proto: 'UDP', src_port: '68', dst_port: '67' } } },
           { from: 'sw', to: 'dhcp', label: 'DISCOVER', c: 'amber' },
           { from: 'sw', to: 'p', label: 'DISCOVER', c: 'gray', par: true },
         ],
       },
       {
         say: 'O — Offer. The server picks a free address and offers it, along with the subnet mask, the gateway and the DNS servers to use.',
-        msgs: [{ from: 'dhcp', to: 'new', label: 'OFFER 192.168.1.57', c: 'green', h: { x: { your_ip: '192.168.1.57', mask: '255.255.255.0', router: '192.168.1.1', dns: '192.168.1.1', lease: '24h' } } }],
+        msgs: [{ from: 'dhcp', to: 'new', label: 'OFFER 192.168.1.57', why: 'The server offers a free address, plus the gateway and DNS server to use.', c: 'green', h: { x: { your_ip: '192.168.1.57', mask: '255.255.255.0', router: '192.168.1.1', dns: '192.168.1.1', lease: '24h' } } }],
       },
       {
         say: 'R — Request. The laptop says “Yes please, I will take 192.168.1.57.” It broadcasts this so any other DHCP servers that also made offers know they were not picked.',
-        msgs: [{ from: 'new', to: 'dhcp', label: 'REQUEST .57', c: 'blue' }],
+        msgs: [{ from: 'new', to: 'dhcp', label: 'REQUEST .57', why: "The laptop accepts: “I'll take 192.168.1.57, please.”", c: 'blue' }],
       },
       {
         say: 'A — Acknowledge. The server confirms and records the lease. The laptop configures its address, gateway and DNS, and it is online.',
         deep: 'Leases expire, so clients renew at 50% of the lease time by unicasting to the server. In large networks a router acts as a DHCP relay (ip helper) to forward broadcasts to a central server on a different subnet.',
-        msgs: [{ from: 'dhcp', to: 'new', label: 'ACK', c: 'green' }],
+        msgs: [{ from: 'dhcp', to: 'new', label: 'ACK', why: 'The server confirms and records the lease. The laptop is online.', c: 'green' }],
         tables: { dhcp: { title: 'Leases', cols: ['IP', 'MAC', 'Expires'], rows: [['192.168.1.40', 'printer', '23h'], ['192.168.1.57', 'laptop', '24h']], fresh: [1] } },
       },
     ],

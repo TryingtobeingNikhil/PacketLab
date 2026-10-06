@@ -31,12 +31,12 @@ export const ip: Lesson[] = [
       },
       {
         say: 'Same network? Talk directly. The laptop checks: is 192.168.1.40 inside 192.168.1.0/24? Yes, so it delivers straight through the switch, no router needed.',
-        msgs: [{ from: 'a', to: 'b', label: 'print job', c: 'blue', h: { l3: { src: '192.168.1.20', dst: '192.168.1.40' } } }],
+        msgs: [{ from: 'a', to: 'b', label: 'print job', why: 'Same network, so the laptop delivers straight through the switch. No router needed.', c: 'blue', h: { l3: { src: '192.168.1.20', dst: '192.168.1.40' } } }],
         focus: ['a', 'b'],
       },
       {
         say: 'Different network? Send it to the gateway. 10.0.5.10 is not in 192.168.1.0/24, so the laptop hands the packet to its default gateway, the router, which has a leg in both networks.',
-        msgs: [{ from: 'a', to: 's', label: 'to 10.0.5.10', c: 'teal', h: { l3: { src: '192.168.1.20', dst: '10.0.5.10' } } }],
+        msgs: [{ from: 'a', to: 's', label: 'to 10.0.5.10', why: 'Different network, so the laptop hands the packet to the router, which has a leg in both.', c: 'teal', h: { l3: { src: '192.168.1.20', dst: '10.0.5.10' } } }],
         focus: ['a', 'r', 's'],
       },
       {
@@ -79,12 +79,12 @@ export const ip: Lesson[] = [
       {
         say: 'A packet for 172.16.4.9 arrives. Two rows match: 172.16.0.0/12 and 172.16.4.0/24. The router picks the longest prefix, /24, because it is the most specific. Off it goes to R2.',
         deep: 'Longest‑prefix match is done in hardware with TCAMs or tries, at hundreds of millions of lookups per second. 0.0.0.0/0 matches everything, so it is the default route, used only when nothing more specific matches.',
-        msgs: [{ from: 'h', to: 'd', label: 'dst 172.16.4.9', c: 'blue', via: ['h', 'r1', 'r2', 'd'], h: { l3: { src: '10.1.0.7', dst: '172.16.4.9', TTL: '64' } } }],
+        msgs: [{ from: 'h', to: 'd', label: 'dst 172.16.4.9', why: 'R1 picks the most specific matching route, 172.16.4.0/24, which points to R2.', c: 'blue', via: ['h', 'r1', 'r2', 'd'], h: { l3: { src: '10.1.0.7', dst: '172.16.4.9', TTL: '64' } } }],
         tables: { r1: rt('R1 routing table', [['10.1.0.0/16', 'direct', 'eth0'], ['172.16.0.0/12', 'R3', 'eth2'], ['172.16.4.0/24', 'R2', 'eth1'], ['0.0.0.0/0', 'R3', 'eth2']], [2]) },
       },
       {
         say: 'A packet for 8.8.8.8 matches nothing specific, so it takes the default route 0.0.0.0/0 towards R3 and out to the Internet.',
-        msgs: [{ from: 'h', to: 'i', label: 'dst 8.8.8.8', c: 'teal', via: ['h', 'r1', 'r3', 'i'] }],
+        msgs: [{ from: 'h', to: 'i', label: 'dst 8.8.8.8', why: 'Nothing specific matches 8.8.8.8, so R1 uses the default route towards R3 and the Internet.', c: 'teal', via: ['h', 'r1', 'r3', 'i'] }],
         tables: { r1: rt('R1 routing table', [['10.1.0.0/16', 'direct', 'eth0'], ['172.16.0.0/12', 'R3', 'eth2'], ['172.16.4.0/24', 'R2', 'eth1'], ['0.0.0.0/0', 'R3', 'eth2']], [3]) },
       },
       {
@@ -134,8 +134,8 @@ export const ip: Lesson[] = [
       {
         say: 'The laptop sends a request. On the way out, the router swaps the private source (192.168.1.20:51000) for its public IP and a free port (81.2.69.160:40001), and writes the mapping down.',
         msgs: [
-          { from: 'a', to: 'nat', label: 'src 192.168.1.20:51000', c: 'blue', h: { l3: { src: '192.168.1.20', dst: '93.184.216.34' }, l4: { src_port: '51000', dst_port: '443' } } },
-          { from: 'nat', to: 's', label: 'src 81.2.69.160:40001', c: 'teal', h: { l3: { src: '81.2.69.160', dst: '93.184.216.34' }, l4: { src_port: '40001', dst_port: '443' } } },
+          { from: 'a', to: 'nat', label: 'src 192.168.1.20:51000', why: 'The laptop sends a request from its private address.', c: 'blue', h: { l3: { src: '192.168.1.20', dst: '93.184.216.34' }, l4: { src_port: '51000', dst_port: '443' } } },
+          { from: 'nat', to: 's', label: 'src 81.2.69.160:40001', why: 'On the way out, the router swaps in its public address and a free port, and writes the mapping down.', c: 'teal', h: { l3: { src: '81.2.69.160', dst: '93.184.216.34' }, l4: { src_port: '40001', dst_port: '443' } } },
         ],
         tables: { nat: { title: 'NAT table', cols: ['Inside', 'Outside', 'Remote'], rows: [['192.168.1.20:51000', ':40001', '93.184.216.34:443']], fresh: [0] } },
       },
@@ -146,12 +146,12 @@ export const ip: Lesson[] = [
       },
       {
         say: 'Replies come back to 81.2.69.160:40001. The router looks up port 40001, rewrites the destination back to 192.168.1.20:51000 and delivers it to the laptop.',
-        msgs: [{ from: 's', to: 'a', label: 'to :40001 → .20:51000', c: 'green' }],
+        msgs: [{ from: 's', to: 'a', label: 'to :40001 → .20:51000', why: 'The reply comes back to port 40001. The router looks it up and forwards it to the laptop.', c: 'green' }],
       },
       {
         say: 'Side effect: nobody outside can start a conversation with your laptop, because there is no table entry for unsolicited traffic. That accidental firewall is why peer‑to‑peer apps need tricks like port forwarding or hole punching.',
         deep: 'This is technically NAPT / PAT (port address translation). Carrier‑grade NAT (CGNAT) does the same at the ISP, so you may be behind two layers. WebRTC uses STUN to learn its public mapping and TURN relays when hole punching fails. IPv6 removes the need for NAT entirely.',
-        msgs: [{ from: 's', to: 'nat', label: 'unsolicited', c: 'red', drop: true }],
+        msgs: [{ from: 's', to: 'nat', label: 'unsolicited', why: 'Nobody inside asked for this one. There is no table entry for it, so the router drops it.', c: 'red', drop: true }],
       },
     ],
     takeaways: [

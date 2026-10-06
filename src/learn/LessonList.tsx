@@ -4,7 +4,7 @@ import { CHAPTERS, LESSONS } from '../lessons'
 import { useStore } from '../store'
 
 export function LessonList() {
-  const { lessonId, openLesson, progress, set } = useStore()
+  const { lessonId, openLesson, progress } = useStore()
   const [q, setQ] = useState('')
   const query = q.trim().toLowerCase()
   const visible = LESSONS
@@ -39,10 +39,7 @@ export function LessonList() {
                 <button
                   key={l.id}
                   className={`lesson-link${l.id === lessonId ? ' on' : ''}`}
-                  onClick={() => {
-                    openLesson(l.id)
-                    if (innerWidth <= 1000) set({ leftOpen: false })
-                  }}
+                  onClick={() => openLesson(l.id)}
                 >
                   <span className={`dotc${progress.done[l.id] ? ' done' : ''}`} />
                   <span className="ttl">{l.title}</span>

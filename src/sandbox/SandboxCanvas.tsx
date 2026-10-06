@@ -9,7 +9,7 @@ import type { Kind, NodeMetrics, SimNode } from '../types'
 import { edgeGeom, laneOf, pointAt, R } from './geometry'
 import { Particles } from './Particles'
 
-const INSETS = { left: 40, right: 80, top: 40, bottom: 40 }
+const INSETS = { left: 40, right: 80, top: 150, bottom: 40 }
 
 /** pointer capture is best-effort: it throws for pointers the browser no longer tracks */
 function capture(e: React.PointerEvent, el: Element = e.currentTarget as Element) {

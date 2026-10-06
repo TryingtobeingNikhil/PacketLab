@@ -21,28 +21,28 @@ export const app: Lesson[] = [
     steps: [
       {
         say: 'Computers route by IP address, but humans remember names. DNS translates one into the other. Your laptop does not do the hard work itself; it asks a recursive resolver, usually run by your ISP or a service like 1.1.1.1.',
-        msgs: [{ from: 'c', to: 'res', label: 'example.com A?', c: 'blue', h: { l4: { proto: 'UDP', dst_port: '53' }, l7: { qname: 'example.com', qtype: 'A', rd: '1 (recursion desired)' } } }],
+        msgs: [{ from: 'c', to: 'res', label: 'example.com A?', why: "Your laptop asks its resolver for example.com's address.", c: 'blue', h: { l4: { proto: 'UDP', dst_port: '53' }, l7: { qname: 'example.com', qtype: 'A', rd: '1 (recursion desired)' } } }],
         tables: { res: { title: 'Resolver cache', cols: ['Name', 'Answer', 'TTL'], rows: [] } },
       },
       {
         say: 'The resolver’s cache is empty, so it starts at the top. It asks a root server: “Where is example.com?” The root does not know, but it knows who runs .com.',
         msgs: [
           { from: 'res', to: 'root', label: 'example.com?', c: 'blue' },
-          { from: 'root', to: 'res', label: 'ask a.gtld-servers.net', c: 'amber', h: { l7: { type: 'referral', ns: 'a.gtld-servers.net', glue: '192.5.6.30' } } },
+          { from: 'root', to: 'res', label: 'ask a.gtld-servers.net', why: "The root server doesn't know, but it knows who runs .com.", c: 'amber', h: { l7: { type: 'referral', ns: 'a.gtld-servers.net', glue: '192.5.6.30' } } },
         ],
       },
       {
         say: 'It asks the .com server. Again, a referral: “Ask example.com’s own name servers.”',
         msgs: [
           { from: 'res', to: 'tld', label: 'example.com?', c: 'blue' },
-          { from: 'tld', to: 'res', label: 'ask ns1.example.com', c: 'amber' },
+          { from: 'tld', to: 'res', label: 'ask ns1.example.com', why: "The .com server refers the resolver to example.com's own name servers.", c: 'amber' },
         ],
       },
       {
         say: 'The authoritative server actually owns the answer: example.com is 93.184.216.34, and you may cache this for 3,600 seconds.',
         msgs: [
           { from: 'res', to: 'auth', label: 'example.com?', c: 'blue' },
-          { from: 'auth', to: 'res', label: 'A 93.184.216.34 TTL 3600', c: 'green', h: { l7: { answer: 'example.com. 3600 IN A 93.184.216.34', aa: '1 (authoritative)' } } },
+          { from: 'auth', to: 'res', label: 'A 93.184.216.34 TTL 3600', why: 'The authoritative server has the real answer, and says it can be cached for an hour.', c: 'green', h: { l7: { answer: 'example.com. 3600 IN A 93.184.216.34', aa: '1 (authoritative)' } } },
         ],
         tables: { res: { title: 'Resolver cache', cols: ['Name', 'Answer', 'TTL'], rows: [['com.', 'NS a.gtld-servers.net', '172800'], ['example.com', '93.184.216.34', '3600']], fresh: [0, 1] } },
       },
@@ -50,7 +50,7 @@ export const app: Lesson[] = [
         say: 'The resolver answers the laptop, which can now open a connection to the real server. The next person who asks the same resolver gets the answer instantly from cache.',
         deep: 'Caching at every level (browser, OS, resolver) is what makes DNS fast; TTLs trade freshness for load. Low TTLs let you fail over quickly but cost more lookups. DNS is mostly UDP; large answers fall back to TCP. DoH/DoT encrypt queries so your network cannot read them.',
         msgs: [
-          { from: 'res', to: 'c', label: '93.184.216.34', c: 'green' },
+          { from: 'res', to: 'c', label: '93.184.216.34', why: 'The resolver answers your laptop, and keeps a copy for the next person who asks.', c: 'green' },
           { from: 'c', to: 'web', label: 'TCP SYN', c: 'violet' },
         ],
       },

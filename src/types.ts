@@ -114,6 +114,8 @@ export interface Msg {
   h?: Partial<Record<Layer, Record<string, string>>>
   /** number of packets in a burst (visual only) */
   burst?: number
+  /** plain-language caption shown on the canvas while this packet moves */
+  why?: string
 }
 
 export interface Table {

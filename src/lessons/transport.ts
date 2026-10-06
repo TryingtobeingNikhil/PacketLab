@@ -27,9 +27,9 @@ export const transport: Lesson[] = [
       {
         say: 'UDP is the simple option: stick a port number on the data and send it. No setup, no guarantee it arrives, no ordering. Great when speed beats perfection: DNS, games, voice calls, video streams.',
         msgs: [
-          { from: 'c', to: 's', label: 'UDP → :53', c: 'teal', h: { l4: { proto: 'UDP', src_port: '50123', dst_port: '53', length: '41' }, l7: { query: 'example.com A?' } } },
+          { from: 'c', to: 's', label: 'UDP → :53', why: 'A DNS question sent over UDP: no setup, just send it.', c: 'teal', h: { l4: { proto: 'UDP', src_port: '50123', dst_port: '53', length: '41' }, l7: { query: 'example.com A?' } } },
           { from: 's', to: 'c', label: 'UDP reply', c: 'green' },
-          { from: 'c', to: 's', label: 'UDP (lost)', c: 'teal', drop: true },
+          { from: 'c', to: 's', label: 'UDP (lost)', why: "This UDP packet is lost, and nobody will notice or resend it. That is UDP's trade-off.", c: 'teal', drop: true },
         ],
         note: { x: 300, y: 330, text: 'lost? UDP doesn’t care' },
       },
@@ -76,24 +76,24 @@ export const transport: Lesson[] = [
       },
       {
         say: '1. SYN: “I’d like to connect. My bytes will start at number 1000.” The starting number is random, to make it hard for attackers to guess and inject packets.',
-        msgs: [{ from: 'c', to: 's', label: 'SYN seq=1000', c: 'blue', h: tcp('SYN', '1000', undefined, { src_port: '51544', dst_port: '443', window: '64240', options: 'MSS 1460, SACK, WScale 7' }) }],
+        msgs: [{ from: 'c', to: 's', label: 'SYN seq=1000', why: "Step 1: “I'd like to talk. My bytes will start at number 1000.”", c: 'blue', h: tcp('SYN', '1000', undefined, { src_port: '51544', dst_port: '443', window: '64240', options: 'MSS 1460, SACK, WScale 7' }) }],
         tables: { c: { title: 'Client state', cols: ['State'], rows: [['SYN_SENT']], fresh: [0] }, s: { title: 'Server state', cols: ['State'], rows: [['LISTEN']] } },
       },
       {
         say: '2. SYN‑ACK: “OK. I got your 1000, so I expect 1001 next. My bytes start at 5000.”',
-        msgs: [{ from: 's', to: 'c', label: 'SYN‑ACK seq=5000 ack=1001', c: 'green', h: tcp('SYN,ACK', '5000', '1001') }],
+        msgs: [{ from: 's', to: 'c', label: 'SYN‑ACK seq=5000 ack=1001', why: 'Step 2: “OK, I got 1000, so I expect 1001 next. My bytes start at 5000.”', c: 'green', h: tcp('SYN,ACK', '5000', '1001') }],
         tables: { c: { title: 'Client state', cols: ['State'], rows: [['SYN_SENT']] }, s: { title: 'Server state', cols: ['State'], rows: [['SYN_RECEIVED']], fresh: [0] } },
       },
       {
         say: '3. ACK: “Got it, expecting 5001.” Both sides are now ESTABLISHED. That cost one full round trip (80 ms here) before the first useful byte.',
         deep: 'Servers keep half‑open connections in a SYN queue. A SYN flood fills it with fake SYNs; SYN cookies defend by encoding the state into the server’s sequence number instead of storing it. TCP Fast Open lets repeat clients send data in the SYN.',
-        msgs: [{ from: 'c', to: 's', label: 'ACK ack=5001', c: 'blue', h: tcp('ACK', '1001', '5001') }],
+        msgs: [{ from: 'c', to: 's', label: 'ACK ack=5001', why: 'Step 3: “Got it.” Both sides are connected. That took one full round trip.', c: 'blue', h: tcp('ACK', '1001', '5001') }],
         tables: { c: { title: 'Client state', cols: ['State'], rows: [['ESTABLISHED']], fresh: [0] }, s: { title: 'Server state', cols: ['State'], rows: [['ESTABLISHED']], fresh: [0] } },
       },
       {
         say: 'Now data flows both ways. Each side acknowledges what it has received by saying which byte it expects next.',
         msgs: [
-          { from: 'c', to: 's', label: 'GET / (200 B)', c: 'violet', h: tcp('PSH,ACK', '1001', '5001') },
+          { from: 'c', to: 's', label: 'GET / (200 B)', why: "Now real data flows: the browser's request.", c: 'violet', h: tcp('PSH,ACK', '1001', '5001') },
           { from: 's', to: 'c', label: 'ACK=1201 + 200 OK', c: 'green', h: tcp('PSH,ACK', '5001', '1201') },
         ],
       },

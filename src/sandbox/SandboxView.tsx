@@ -3,6 +3,7 @@ import type { ViewportApi } from '../components/Viewport'
 import { DT, step } from '../sim/engine'
 import { challengeOf, useStore } from '../store'
 import type { Kind } from '../types'
+import { Commentary } from './Commentary'
 import { Inspector } from './Inspector'
 import { Palette } from './Palette'
 import { SandboxCanvas } from './SandboxCanvas'
@@ -115,6 +116,7 @@ export function SandboxView() {
       <main className="main">
         <div className="canvas-wrap">
           <SandboxCanvas ref={vp} />
+          <Commentary />
         </div>
         <Scope hist={hist.current} onStep={() => { for (let i = 0; i < 10; i++) tick() }} />
       </main>

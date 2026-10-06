@@ -52,7 +52,7 @@ export function Puck({ kind, x, y, r, label, sub, chip, chipBad, ring, className
       <div className="disc">
         <Icon size={Math.round(r * 0.72)} strokeWidth={1.9} />
       </div>
-      <div className="hit" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} />
+      <div className="hit" title={`${label}: ${info.desc}`} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} />
       {children}
       <div className="lbl">
         <b>{label}</b>

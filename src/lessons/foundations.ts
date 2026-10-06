@@ -27,7 +27,7 @@ export const foundations: Lesson[] = [
         say: 'Your request does not travel as one big blob. It is chopped into small pieces called packets, each up to about 1,500 bytes. Every packet carries a label saying where it is from and where it is going.',
         deep: 'The 1,500 byte limit is the Ethernet MTU (maximum transmission unit). Anything larger is split up by TCP before it leaves your machine, so routers rarely have to fragment.',
         msgs: [
-          { from: 'you', to: 'home', label: 'pkt 1', c: 'blue', h: { l3: { src: '192.168.1.20', dst: '203.0.113.7', TTL: '64' }, l7: { data: 'GET /video … (part 1 of 4)' } } },
+          { from: 'you', to: 'home', label: 'pkt 1', why: "This is one small piece of your request, with the server's address written on it.", c: 'blue', h: { l3: { src: '192.168.1.20', dst: '203.0.113.7', TTL: '64' }, l7: { data: 'GET /video … (part 1 of 4)' } } },
         ],
         focus: ['you'],
       },
@@ -44,7 +44,7 @@ export const foundations: Lesson[] = [
       {
         say: 'Packets can arrive out of order, or not at all. The server puts them back together using sequence numbers, and asks again for any that went missing. That reliability job belongs to TCP, which you will meet later.',
         msgs: [
-          { from: 'srv', to: 'you', label: 'video data', c: 'green', burst: 3 },
+          { from: 'srv', to: 'you', label: 'video data', why: 'The server answers with the video, also chopped into packets.', c: 'green', burst: 3 },
         ],
         focus: ['srv', 'you'],
       },
@@ -52,7 +52,7 @@ export const foundations: Lesson[] = [
         say: 'If one router breaks, the others simply route around it. That resilience was a design goal from the very beginning of the Internet.',
         msgs: [
           { from: 'you', to: 'srv', label: 'pkt 5', c: 'blue', via: ['you', 'home', 'ispA'], drop: true },
-          { from: 'you', to: 'srv', label: 'pkt 5 (again)', c: 'blue', via: ['you', 'home', 'ispB', 'core', 'srv'] },
+          { from: 'you', to: 'srv', label: 'pkt 5 (again)', why: 'Router A is down, so the resent packet simply goes the other way, through B.', c: 'blue', via: ['you', 'home', 'ispB', 'core', 'srv'] },
         ],
         note: { x: 400, y: 380, text: 'router A is down → traffic flows via B' },
       },
@@ -89,21 +89,21 @@ export const foundations: Lesson[] = [
       },
       {
         say: 'Layer 7, application: the browser writes an HTTP request. This is the letter you actually want delivered.',
-        msgs: [{ from: 'a', to: 'a', label: 'HTTP GET /', c: 'violet', h: { l7: { method: 'GET', path: '/', host: 'example.com' } } }],
+        msgs: [{ from: 'a', to: 'a', label: 'HTTP GET /', why: 'The browser writes the request itself. No addresses yet: just what it wants.', c: 'violet', h: { l7: { method: 'GET', path: '/', host: 'example.com' } } }],
         focus: ['a'],
       },
       {
         say: 'Layer 4, transport: TCP wraps it and adds port numbers (which app it is for) and a sequence number (so it can be reassembled and retransmitted).',
-        msgs: [{ from: 'a', to: 'a', label: 'TCP | HTTP', c: 'blue', h: { l4: { src_port: '51544', dst_port: '443', seq: '1001', flags: 'PSH,ACK' }, l7: { method: 'GET', path: '/' } } }],
+        msgs: [{ from: 'a', to: 'a', label: 'TCP | HTTP', why: 'TCP wraps the request and adds port numbers and a sequence number.', c: 'blue', h: { l4: { src_port: '51544', dst_port: '443', seq: '1001', flags: 'PSH,ACK' }, l7: { method: 'GET', path: '/' } } }],
       },
       {
         say: 'Layer 3, network: IP wraps that and adds the source and destination IP address. This is the address that gets you across the world.',
-        msgs: [{ from: 'a', to: 'a', label: 'IP | TCP | HTTP', c: 'teal', h: { l3: { src: '10.0.0.5', dst: '93.184.216.34', TTL: '64', proto: 'TCP' }, l4: { src_port: '51544', dst_port: '443' }, l7: { method: 'GET' } } }],
+        msgs: [{ from: 'a', to: 'a', label: 'IP | TCP | HTTP', why: 'IP wraps that and adds the source and destination IP addresses.', c: 'teal', h: { l3: { src: '10.0.0.5', dst: '93.184.216.34', TTL: '64', proto: 'TCP' }, l4: { src_port: '51544', dst_port: '443' }, l7: { method: 'GET' } } }],
       },
       {
         say: 'Layer 2, link: Ethernet wraps everything one last time with MAC addresses: the address of the very next device on this wire, not the final server.',
         msgs: [{
-          from: 'a', to: 'sw', label: 'ETH | IP | TCP | HTTP', c: 'amber',
+          from: 'a', to: 'sw', label: 'ETH | IP | TCP | HTTP', why: 'Ethernet adds the outermost envelope, addressed to the next device on this wire. Now it can leave the laptop.', c: 'amber',
           h: { l2: { src_mac: MAC.a, dst_mac: MAC.r, type: 'IPv4' }, l3: { src: '10.0.0.5', dst: '93.184.216.34', TTL: '64' }, l4: { src_port: '51544', dst_port: '443' }, l7: { method: 'GET', path: '/' } },
         }],
       },
@@ -112,7 +112,7 @@ export const foundations: Lesson[] = [
         deep: 'The IP addresses stay the same end to end (ignoring NAT); the MAC addresses are rewritten at every router hop. TTL drops by one per router so a looping packet eventually dies.',
         msgs: [
           { from: 'sw', to: 'r', label: 'ETH | IP | …', c: 'amber' },
-          { from: 'r', to: 's', label: 'new ETH | IP | …', c: 'teal', h: { l2: { src_mac: 'router-wan', dst_mac: 'next-hop' }, l3: { src: '10.0.0.5 → (NAT)', dst: '93.184.216.34', TTL: '63' } } },
+          { from: 'r', to: 's', label: 'new ETH | IP | …', why: 'The router keeps the IP envelope but writes a brand new Ethernet envelope for the next link, and lowers TTL by one.', c: 'teal', h: { l2: { src_mac: 'router-wan', dst_mac: 'next-hop' }, l3: { src: '10.0.0.5 → (NAT)', dst: '93.184.216.34', TTL: '63' } } },
         ],
         focus: ['sw', 'r'],
       },
@@ -156,12 +156,12 @@ export const foundations: Lesson[] = [
       {
         say: 'Light in fibre travels about 200,000 km per second, two thirds of its speed in a vacuum. New York to London is about 5,570 km, so the very best one‑way trip is about 28 ms, and a round trip about 56 ms. No upgrade can beat physics.',
         deep: 'Real routes are longer than the great‑circle distance and add queuing and processing at each hop, so ~70 ms RTT is typical. This is why companies put servers in many regions.',
-        msgs: [{ from: 'ny', to: 'ld', label: 'ping', c: 'blue' }, { from: 'ld', to: 'ny', label: 'pong', c: 'green' }],
+        msgs: [{ from: 'ny', to: 'ld', label: 'ping', why: 'A tiny packet crosses the Atlantic. Even at the speed of light in glass, this takes about 28 ms each way.', c: 'blue' }, { from: 'ld', to: 'ny', label: 'pong', why: 'The reply makes the same trip back. Round trip: about 56 ms, and no upgrade can make light faster.', c: 'green' }],
         note: { x: 360, y: 60, text: '≈ 56 ms round trip, minimum' },
       },
       {
         say: 'Bandwidth decides how long a big transfer takes after the first bit arrives. A 1 GB file over 10 Gb/s needs 0.8 seconds of sending time, no matter how close the server is.',
-        msgs: [{ from: 'ld', to: 'ny', label: '1 GB file', c: 'violet', burst: 6 }],
+        msgs: [{ from: 'ld', to: 'ny', label: '1 GB file', why: 'A big file: once the first bit arrives, bandwidth decides how long the rest takes.', c: 'violet', burst: 6 }],
       },
       {
         say: 'Small requests (web pages, API calls, chat messages) are latency‑bound: they are done before bandwidth matters. Big ones (video, backups, model weights) are bandwidth‑bound.',

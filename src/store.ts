@@ -29,6 +29,8 @@ interface State {
   shortcutsOpen: boolean
   leftOpen: boolean
   rightOpen: boolean
+  /** learn mode: the course outline drawer */
+  courseOpen: boolean
 
   // learn
   lessonId: string
@@ -119,6 +121,7 @@ export const useStore = create<State>((set, get) => ({
   shortcutsOpen: false,
   leftOpen: typeof innerWidth === 'undefined' ? true : innerWidth > 1000,
   rightOpen: typeof innerWidth === 'undefined' ? true : innerWidth > 1000,
+  courseOpen: false,
 
   lessonId: saved.lessonId ?? 'what-is-a-network',
   stepIdx: 0,
@@ -143,7 +146,7 @@ export const useStore = create<State>((set, get) => ({
   set: (p) => set(p),
   setMode: (mode) => set({ mode, selection: null }),
   toggleTheme: () => set({ theme: get().theme === 'dark' ? 'light' : 'dark' }),
-  openLesson: (id, step = 0) => set({ lessonId: id, stepIdx: step, mode: 'learn' }),
+  openLesson: (id, step = 0) => set({ lessonId: id, stepIdx: step, mode: 'learn', courseOpen: false }),
   setStep: (i) => set({ stepIdx: i }),
   markDone: (id, quiz) => {
     const p = get().progress

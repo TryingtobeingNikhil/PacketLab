@@ -3,13 +3,14 @@ import { LESSON_BY_ID, LESSONS } from '../lessons'
 import { useStore } from '../store'
 import { LessonCanvas } from './LessonCanvas'
 import { LessonList } from './LessonList'
-import { PlayerDock } from './PlayerDock'
+import { StoryPanel } from './StoryPanel'
+import { LiveCaption } from './LiveCaption'
 import { buildTimeline } from './timeline'
 
 const EMPTY = { msgs: [], total: 0 }
 
 export function LearnView() {
-  const { lessonId, stepIdx, setStep, autoplay, speed, leftOpen } = useStore()
+  const { lessonId, stepIdx, setStep, autoplay, speed, courseOpen, set } = useStore()
   const lesson = LESSON_BY_ID[lessonId] ?? LESSONS[0]
   const summary = stepIdx >= lesson.steps.length
   const step = lesson.steps[stepIdx]
@@ -64,11 +65,28 @@ export function LearnView() {
   }, [lesson, setStep])
 
   return (
-    <div className="body">
-      {leftOpen && (
-        <aside className="sidebar" aria-label="Lessons">
-          <LessonList />
-        </aside>
+    <div className="body learn">
+      <StoryPanel
+        lesson={lesson}
+        timeline={timeline}
+        activeIdx={active}
+        selectedIdx={selected}
+        onSelect={setSelected}
+        paused={paused}
+        onPause={() => setPaused((p) => !p)}
+        onReplay={() => {
+          setPaused(false)
+          setReplay((r) => r + 1)
+        }}
+        progressEl={progressEl}
+      />
+      {courseOpen && (
+        <>
+          <div className="drawer-scrim" onClick={() => set({ courseOpen: false })} />
+          <aside className="sidebar course-drawer" aria-label="All lessons">
+            <LessonList />
+          </aside>
+        </>
       )}
       <main className="main">
         <div className="canvas-wrap">
@@ -83,20 +101,8 @@ export function LearnView() {
             onActive={setActive}
             onDone={onDone}
           />
+          {!summary && <LiveCaption lesson={lesson} timeline={timeline} idx={selected ?? active} />}
         </div>
-        <PlayerDock
-          lesson={lesson}
-          activeIdx={active}
-          selectedIdx={selected}
-          onSelect={setSelected}
-          paused={paused}
-          onPause={() => setPaused((p) => !p)}
-          onReplay={() => {
-            setPaused(false)
-            setReplay((r) => r + 1)
-          }}
-          progressEl={progressEl}
-        />
       </main>
     </div>
   )
