@@ -4,6 +4,7 @@ import { fmtBits, fmtBytes, fmtMs, fmtPct, fmtRate, logToVal, nice, valToLog } f
 import { capacityOf, linkCapacity } from '../sim/engine'
 import { PRESET_BY_ID } from '../sim/presets'
 import type { Goal } from '../sim/challenges'
+import { MissionPanel } from '../build/MissionPanel'
 import { challengeOf, useStore } from '../store'
 import type { EdgeMetrics, LinkParams, NodeMetrics, NodeParams, SimEdge, SimNode } from '../types'
 
@@ -215,9 +216,10 @@ const metricLabel = (g: Goal) => (g.metric === 'p99' ? 'p99 latency' : g.metric 
 const metricFmt = (g: Goal, v: number) => (g.metric === 'p99' ? fmtMs(v) : g.metric === 'errorPct' ? fmtPct(v) : `${fmtRate(v)}/s`)
 
 function Overview({ hold }: { hold: number }) {
-  const { presetId, challengeId, metrics, hintsShown, set, progress, graph } = useStore()
+  const { presetId, challengeId, missionId, metrics, hintsShown, set, progress, graph } = useStore()
   const preset = presetId ? PRESET_BY_ID[presetId] : null
   const ch = challengeOf(challengeId)
+  if (missionId) return <MissionPanel id={missionId} />
 
   if (ch) {
     const g = metrics?.global

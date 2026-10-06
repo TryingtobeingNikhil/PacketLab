@@ -13,6 +13,8 @@ export interface Preset {
   notes: Note[]
   /** what to try */
   tryIt: string[]
+  /** used as a mission starting point, not listed under Scenarios */
+  hidden?: boolean
 }
 
 // layouts are authored on a 340 × 120 grid; pucks need a little more vertical room
@@ -27,6 +29,81 @@ function e(from: string, to: string, params: Partial<LinkParams> = {}): SimEdge 
 const note = (id: string, x: number, y: number, text: string, w = 540): Note => ({ id, x: Math.round(x * X) - 50, y: Math.round(y * Y) + 10, text, w: Math.min(w, 480) })
 
 export const PRESETS: Preset[] = [
+  {
+    id: 'starter',
+    title: 'My first network',
+    level: 'beginner',
+    blurb: 'A laptop at home loading a website. Every box is a real device and every line a real link.',
+    offered: 8,
+    payloadKB: 16,
+    nodes: [
+      n('lap', 'client', 'Your laptop', 0, 0),
+      n('wifi', 'wifi', 'Home Wi‑Fi', 340, 0, { serviceMs: 1.2 }),
+      n('home', 'nat', 'Home router', 680, 0),
+      n('net', 'internet', 'Internet', 1020, 0),
+      n('web', 'server', 'Web server', 1360, 0, { concurrency: 16, serviceMs: 20 }),
+      n('db', 'database', 'Database', 1700, 0, { concurrency: 12, serviceMs: 8 }),
+    ],
+    edges: [
+      e('lap', 'wifi', { bandwidthMbps: 300, latencyMs: 2 }),
+      e('wifi', 'home', { latencyMs: 0.3 }),
+      e('home', 'net', { bandwidthMbps: 200, latencyMs: 8 }),
+      e('net', 'web', { bandwidthMbps: 10000, latencyMs: 20 }),
+      e('web', 'db', { latencyMs: 0.5 }),
+    ],
+    notes: [],
+    tryIt: ['Press “Trace one request” to see what every box does.', 'Drag the traffic slider up until something turns red.', 'Click the Database and make it slower.'],
+  },
+  {
+    id: 'm-online',
+    title: 'Get your laptop online',
+    level: 'beginner',
+    blurb: 'Build the road from a laptop to a website.',
+    hidden: true,
+    offered: 5,
+    payloadKB: 16,
+    nodes: [
+      n('lap', 'client', 'Your laptop', 0, 0),
+      n('site', 'server', 'Website', 1360, 0, { concurrency: 16, serviceMs: 20 }),
+    ],
+    edges: [],
+    notes: [note('n1', 300, 120, 'Your laptop wants this website. Drag parts in from the left and wire them: laptop → Wi‑Fi → router → Internet → website.', 520)],
+    tryIt: [],
+  },
+  {
+    id: 'm-launch',
+    title: 'Survive launch day',
+    level: 'beginner',
+    blurb: 'One server is not enough. Spread the load.',
+    hidden: true,
+    offered: 400,
+    payloadKB: 4,
+    nodes: [
+      n('u', 'client', 'Users', 0, 0),
+      n('api', 'server', 'API server', 680, 0, { concurrency: 8, serviceMs: 25 }),
+      n('db', 'database', 'Database', 1360, 0, { concurrency: 20, serviceMs: 30 }),
+    ],
+    edges: [e('u', 'api', { latencyMs: 15 }), e('api', 'db', { latencyMs: 0.5 })],
+    notes: [note('n1', 0, 140, '400 users a second just arrived. One API server finishes about 320. Put a load balancer in front and add more servers behind it.', 520)],
+    tryIt: [],
+  },
+  {
+    id: 'm-far',
+    title: 'Fast for faraway users',
+    level: 'intermediate',
+    blurb: 'Your users are in Mumbai; your server is in Virginia.',
+    hidden: true,
+    offered: 50,
+    payloadKB: 16,
+    nodes: [
+      n('u', 'client', 'Users in Mumbai', 0, 0),
+      n('net', 'internet', 'Internet', 680, 0),
+      n('o', 'server', 'Origin (Virginia)', 1360, 0, { concurrency: 32, serviceMs: 15 }),
+    ],
+    edges: [e('u', 'net', { latencyMs: 4 }), e('net', 'o', { latencyMs: 110 })],
+    notes: [note('n1', 0, 140, 'Every request crosses the planet: about 230 ms there and back. Put a CDN edge right next to the users.', 520)],
+    tryIt: [],
+  },
   {
     id: 'single',
     title: 'One server, one database',

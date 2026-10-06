@@ -29,7 +29,7 @@ export function TopBar() {
         <span>Packet<em>lab</em></span>
       </div>
       <nav className="tabs" role="tablist" aria-label="Mode">
-        <button className={`tab${mode === 'learn' ? ' on' : ''}`} onClick={() => setMode('learn')} role="tab" aria-selected={mode === 'learn'}>
+        <button className={`tab${mode === 'learn' ? ' on' : ''}`} onClick={() => (mode === 'learn' ? set({ learnView: 'map' }) : setMode('learn'))} role="tab" aria-selected={mode === 'learn'}>
           <GraduationCap size={16} /> Learn
         </button>
         <button className={`tab${mode === 'sandbox' ? ' on' : ''}`} onClick={() => setMode('sandbox')} role="tab" aria-selected={mode === 'sandbox'}>

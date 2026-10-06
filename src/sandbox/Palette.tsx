@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CheckCircle2, Search, Target } from 'lucide-react'
 import { CAT_COLOR, CATEGORIES, KINDS } from '../catalog'
 import { CHALLENGES } from '../sim/challenges'
+import { MISSIONS } from '../build/missions'
 import { PRESETS } from '../sim/presets'
 import { useStore } from '../store'
 import type { Kind } from '../types'
@@ -11,7 +12,7 @@ type Tab = 'scenarios' | 'challenges' | 'parts'
 export function Palette({ onAdd }: { onAdd: (k: Kind) => void }) {
   const [tab, setTab] = useState<Tab>('scenarios')
   const [q, setQ] = useState('')
-  const { presetId, challengeId, loadPreset, progress } = useStore()
+  const { presetId, challengeId, missionId, loadPreset, progress } = useStore()
   const query = q.trim().toLowerCase()
   const kinds = (Object.keys(KINDS) as Kind[]).filter((k) => KINDS[k].palette)
   const solved = CHALLENGES.filter((c) => progress.challenges[c.id]).length
@@ -20,7 +21,7 @@ export function Palette({ onAdd }: { onAdd: (k: Kind) => void }) {
     <>
       <div className="subtabs" role="tablist">
         <button className={tab === 'scenarios' ? 'on' : ''} onClick={() => setTab('scenarios')}>Scenarios</button>
-        <button className={tab === 'challenges' ? 'on' : ''} onClick={() => setTab('challenges')}>Challenges</button>
+        <button className={tab === 'challenges' ? 'on' : ''} onClick={() => setTab('challenges')}>Missions</button>
         <button className={tab === 'parts' ? 'on' : ''} onClick={() => setTab('parts')}>Parts</button>
       </div>
 
@@ -75,8 +76,8 @@ export function Palette({ onAdd }: { onAdd: (k: Kind) => void }) {
         <div className="scroll">
           <div className="card-list">
             <p className="muted" style={{ fontSize: 12.5, margin: '0 2px' }}>Ready‑made systems with a note on the bench telling you what to try.</p>
-            {PRESETS.map((p) => (
-              <button key={p.id} className={`scn${presetId === p.id && !challengeId ? ' on' : ''}`} onClick={() => loadPreset(p.id)}>
+            {PRESETS.filter((p) => !p.hidden).map((p) => (
+              <button key={p.id} className={`scn${presetId === p.id && !challengeId && !missionId ? ' on' : ''}`} onClick={() => loadPreset(p.id)}>
                 <b>{p.title} <span className={`lvl ${p.level}`} style={{ marginLeft: 'auto' }}>{p.level === 'beginner' ? 'beg' : 'int'}</span></b>
                 <span className="d">{p.blurb}</span>
               </button>
@@ -88,6 +89,18 @@ export function Palette({ onAdd }: { onAdd: (k: Kind) => void }) {
       {tab === 'challenges' && (
         <div className="scroll">
           <div className="card-list">
+            <div className="pal-label" style={{ padding: '2px 2px 0' }}>Build it yourself</div>
+            {MISSIONS.map((ms) => (
+              <button key={ms.id} className={`scn${missionId === ms.id ? ' on' : ''}`} onClick={() => loadPreset(ms.preset, { mission: ms.id })}>
+                <b>
+                  {progress.missions?.[ms.id] ? <CheckCircle2 size={15} style={{ color: 'var(--ok)' }} /> : <Target size={15} style={{ color: 'var(--c-teal)' }} />}
+                  {ms.title}
+                  <span className={`lvl ${ms.level}`} style={{ marginLeft: 'auto' }}>{ms.level === 'beginner' ? 'beg' : 'int'}</span>
+                </b>
+                <span className="d">{ms.brief}</span>
+              </button>
+            ))}
+            <div className="pal-label" style={{ padding: '10px 2px 0' }}>Fix what is broken</div>
             <p className="muted" style={{ fontSize: 12.5, margin: '0 2px' }}>
               Each design ships broken. Make one change that meets the goals and hold them for 5 seconds. <b className="mono">{solved}/{CHALLENGES.length}</b> solved.
             </p>

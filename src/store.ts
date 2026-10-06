@@ -18,6 +18,7 @@ interface Progress {
   done: Record<string, boolean>
   quiz: Record<string, number> // lesson -> correct answers
   challenges: Record<string, boolean>
+  missions: Record<string, boolean>
 }
 
 interface State {
@@ -33,6 +34,8 @@ interface State {
   courseOpen: boolean
 
   // learn
+  /** learn mode shows the explore map, or a lesson */
+  learnView: 'map' | 'lesson'
   lessonId: string
   stepIdx: number
   autoplay: boolean
@@ -42,6 +45,7 @@ interface State {
   // sandbox
   presetId: string | null
   challengeId: string | null
+  missionId: string | null
   hintsShown: number
   graph: Graph
   past: Graph[]
@@ -61,7 +65,7 @@ interface State {
   setStep: (i: number) => void
   markDone: (id: string, quiz?: number) => void
 
-  loadPreset: (id: string, opts?: { load?: number; challenge?: string | null }) => void
+  loadPreset: (id: string, opts?: { load?: number; challenge?: string | null; mission?: string | null }) => void
   loadGraph: (g: Graph, offered?: number, payloadKB?: number) => void
   clearCanvas: () => void
   commit: () => void
@@ -78,6 +82,7 @@ interface State {
   moveNote: (id: string, x: number, y: number) => void
   resetSim: () => void
   completeChallenge: (id: string) => void
+  completeMission: (id: string) => void
 }
 
 const LS = 'packetlab:v1'
@@ -123,14 +128,16 @@ export const useStore = create<State>((set, get) => ({
   rightOpen: typeof innerWidth === 'undefined' ? true : innerWidth > 1000,
   courseOpen: false,
 
+  learnView: 'map',
   lessonId: saved.lessonId ?? 'what-is-a-network',
   stepIdx: 0,
   autoplay: saved.autoplay ?? false,
   speed: saved.speed ?? 1,
-  progress: { done: {}, quiz: {}, challenges: {}, ...(saved.progress ?? {}) },
+  progress: { done: {}, quiz: {}, challenges: {}, missions: {}, ...(saved.progress ?? {}) },
 
   presetId: first.id,
   challengeId: null,
+  missionId: null,
   hintsShown: 0,
   graph: { nodes: clone(first.nodes), edges: clone(first.edges), notes: clone(first.notes) },
   past: [],
@@ -146,7 +153,7 @@ export const useStore = create<State>((set, get) => ({
   set: (p) => set(p),
   setMode: (mode) => set({ mode, selection: null }),
   toggleTheme: () => set({ theme: get().theme === 'dark' ? 'light' : 'dark' }),
-  openLesson: (id, step = 0) => set({ lessonId: id, stepIdx: step, mode: 'learn', courseOpen: false }),
+  openLesson: (id, step = 0) => set({ lessonId: id, stepIdx: step, mode: 'learn', learnView: 'lesson', courseOpen: false }),
   setStep: (i) => set({ stepIdx: i }),
   markDone: (id, quiz) => {
     const p = get().progress
@@ -165,6 +172,7 @@ export const useStore = create<State>((set, get) => ({
     set({
       presetId: id,
       challengeId: opts.challenge ?? null,
+      missionId: opts.mission ?? null,
       hintsShown: 0,
       graph: { nodes: clone(pr.nodes), edges: clone(pr.edges), notes: clone(pr.notes) },
       past: [],
@@ -181,13 +189,13 @@ export const useStore = create<State>((set, get) => ({
   },
   loadGraph: (g, offered, payloadKB) =>
     set({
-      presetId: null, challengeId: null, graph: g, past: [], future: [], selection: null, metrics: null,
+      presetId: null, challengeId: null, missionId: null, graph: g, past: [], future: [], selection: null, metrics: null,
       runtime: newRuntime(), offered: offered ?? get().offered, payloadKB: payloadKB ?? get().payloadKB,
       mode: 'sandbox', fitKey: get().fitKey + 1,
     }),
   clearCanvas: () => {
     get().commit()
-    set({ graph: { nodes: [], edges: [], notes: [] }, presetId: null, challengeId: null, selection: null, metrics: null, runtime: newRuntime() })
+    set({ graph: { nodes: [], edges: [], notes: [] }, presetId: null, challengeId: null, missionId: null, selection: null, metrics: null, runtime: newRuntime() })
   },
   commit: () => {
     const { graph, past } = get()
@@ -265,6 +273,11 @@ export const useStore = create<State>((set, get) => ({
     set({ graph: { ...g, notes: g.notes.map((n) => (n.id === id ? { ...n, x, y } : n)) } })
   },
   resetSim: () => set({ runtime: newRuntime(), metrics: null }),
+  completeMission: (id) => {
+    const p = get().progress
+    if (p.missions?.[id]) return
+    set({ progress: { ...p, missions: { ...p.missions, [id]: true } } })
+  },
   completeChallenge: (id) => {
     const p = get().progress
     if (p.challenges[id]) return

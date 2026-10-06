@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, BookOpen, Cpu, FlaskConical, GraduationCap, Search, Sprout, X } from 'lucide-react'
+import { BookOpen, Search, X } from 'lucide-react'
 import { GLOSSARY } from '../glossary'
-import { LESSON_BY_ID, LESSONS } from '../lessons'
+import { LESSON_BY_ID } from '../lessons'
 import { useStore } from '../store'
-import { Logo } from './TopBar'
 
 function Modal({ title, onClose, children, wide }: { title: React.ReactNode; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   useEffect(() => {
@@ -69,7 +68,7 @@ export function Shortcuts() {
   return (
     <Modal title="Help & shortcuts" onClose={() => set({ shortcutsOpen: false })}>
       <p style={{ marginTop: 0, color: 'var(--text-2)' }}>
-        <b>Learn</b> walks you through each protocol with animated packets: read the step, watch the packets, click any message to inspect its headers.
+        <b>Learn</b> is a map of the Internet: click any device to open its short animated lessons. Each one starts with a missing piece to place, then the explanation follows the packets on the canvas.
         <br />
         <b>Sandbox</b> is a live simulator: drag the load up, click boxes and links to change them, and watch where things break.
       </p>
@@ -79,52 +78,6 @@ export function Shortcuts() {
           <span className="kbd">{k}</span>
         </div>
       ))}
-      <button className="btn sm" style={{ marginTop: 14 }} onClick={() => set({ shortcutsOpen: false, welcomed: false })}>Show the welcome screen again</button>
     </Modal>
-  )
-}
-
-export function Welcome() {
-  const { set, openLesson, loadPreset } = useStore()
-  const done = (patch: Parameters<typeof set>[0]) => set({ welcomed: true, ...patch })
-  const beginnerCount = LESSONS.filter((l) => l.level === 'beginner').length
-  const paths = [
-    { icon: Sprout, cat: 'var(--c-green)', title: 'I’m new to networking', text: `Start at “what is a packet?”. Plain language, one idea per step. ${beginnerCount} beginner lessons.`, go: () => { done({ level: 'beginner' }); openLesson('what-is-a-network') } },
-    { icon: GraduationCap, cat: 'var(--c-violet)', title: 'I know the basics', text: 'Header‑level detail with every “Go deeper” note open. Starts at TCP loss recovery.', go: () => { done({ level: 'intermediate' }); openLesson('tcp-reliability') } },
-    { icon: Cpu, cat: 'var(--c-pink)', title: 'Show me AI infrastructure', text: 'NVLink vs InfiniBand, RDMA, all‑reduce, parallelism, incast, LLM serving.', go: () => { done({}); openLesson('gpu-interconnects') } },
-    { icon: FlaskConical, cat: 'var(--c-teal)', title: 'Let me break things', text: 'Open the simulator, push the load up and watch where it falls over.', go: () => { done({}); loadPreset('single') } },
-  ]
-  return (
-    <div className="scrim">
-      <div className="welcome" role="dialog" aria-modal="true" aria-label="Welcome">
-        <div className="welcome-left">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: 16 }}>
-            <Logo size={30} /> Packetlab
-          </div>
-          <h1>Networks are <em>packets</em> in motion. Come watch them.</h1>
-          <p>
-            Every lesson is a small network you can see working: frames, packets and segments moving hop by hop, with their headers open.
-            When you are ready, the bench lets you load a real topology until it breaks.
-          </p>
-          <div className="facts">
-            <span><b>{LESSONS.length}</b>lessons</span>
-            <span><b>7</b>chapters</span>
-            <span><b>L2 → AI</b>Ethernet to GPU fabrics</span>
-          </div>
-        </div>
-        <div className="welcome-right">
-          <span className="eyebrow">Where do you want to start?</span>
-          {paths.map((p) => (
-            <button key={p.title} className="path" style={{ ['--cat' as string]: p.cat }} onClick={p.go}>
-              <span className="disc"><p.icon size={20} /></span>
-              <h3>{p.title}</h3>
-              <p>{p.text}</p>
-              <ArrowRight size={16} />
-            </button>
-          ))}
-          <span className="muted" style={{ fontSize: 12, marginTop: 4 }}>You can switch between Beginner and Intermediate at any time from the top bar.</span>
-        </div>
-      </div>
-    </div>
   )
 }

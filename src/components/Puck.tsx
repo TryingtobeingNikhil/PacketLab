@@ -15,6 +15,11 @@ interface Props {
   chipBad?: boolean
   /** utilisation ring, 0..1+ */
   ring?: number
+  /** fixed ring colour (otherwise coloured by load) */
+  ringColor?: string
+  /** draw as an empty dashed slot with a question mark */
+  ghost?: boolean
+  onClick?: (e: React.MouseEvent) => void
   className?: string
   nodeId?: string
   children?: ReactNode
@@ -24,7 +29,7 @@ interface Props {
 }
 
 /** A network device drawn as a round puck with an optional load ring. Positioned by its centre. */
-export function Puck({ kind, x, y, r, label, sub, chip, chipBad, ring, className = '', nodeId, children, onPointerDown, onPointerMove, onPointerUp }: Props) {
+export function Puck({ kind, x, y, r, label, sub, chip, chipBad, ring, ringColor, ghost, className = '', nodeId, children, onPointerDown, onPointerMove, onPointerUp, onClick }: Props) {
   const info = KINDS[kind]
   const Icon = info.icon
   const R = r + 7
@@ -40,7 +45,7 @@ export function Puck({ kind, x, y, r, label, sub, chip, chipBad, ring, className
             cy={R + 3}
             r={R}
             fill="none"
-            stroke={utilColor(ring)}
+            stroke={ringColor ?? utilColor(ring)}
             strokeWidth={4}
             strokeLinecap="round"
             strokeDasharray={`${C * u} ${C}`}
@@ -49,14 +54,14 @@ export function Puck({ kind, x, y, r, label, sub, chip, chipBad, ring, className
           />
         </svg>
       )}
-      <div className="disc">
-        <Icon size={Math.round(r * 0.72)} strokeWidth={1.9} />
+      <div className={`disc${ghost ? ' ghost' : ''}`}>
+        {ghost ? <span className="q">?</span> : <Icon size={Math.round(r * 0.72)} strokeWidth={1.9} />}
       </div>
-      <div className="hit" title={`${label}: ${info.desc}`} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} />
+      <div className="hit" title={ghost ? 'Something is missing here' : `${label}: ${info.desc}`} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onClick={onClick} />
       {children}
       <div className="lbl">
-        <b>{label}</b>
-        {sub && <small>{sub}</small>}
+        <b>{ghost ? '???' : label}</b>
+        {sub && !ghost && <small>{sub}</small>}
         {chip !== undefined && <span className={`chip${chipBad ? ' bad' : ''}`}>{chip}</span>}
       </div>
     </div>

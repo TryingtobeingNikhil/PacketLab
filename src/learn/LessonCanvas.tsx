@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Maximize2, Minus, Plus } from 'lucide-react'
-import { Viewport, type ViewportApi } from '../components/Viewport'
+import { Viewport, type View, type ViewportApi } from '../components/Viewport'
 import { Puck } from '../components/Puck'
 import type { Lesson } from '../types'
 import { COLORS, positionAt, tablesAt, type Timeline } from './timeline'
@@ -16,12 +16,25 @@ interface Props {
   progressEl: React.RefObject<HTMLElement>
   onActive: (idx: number) => void
   onDone: () => void
+  /** draw this node as an empty slot (the missing-piece puzzle) */
+  ghostId?: string | null
+  /** screen-space overlay that can anchor itself next to nodes */
+  overlay?: (ctx: OverlayCtx) => ReactNode
+}
+
+export interface OverlayCtx {
+  /** node centres in canvas pixels */
+  screen: Record<string, { x: number; y: number }>
+  /** puck radius in canvas pixels */
+  r: number
+  w: number
+  h: number
 }
 
 const R = 30
-const INSETS = { left: 40, right: 70, top: 40, bottom: 150 }
+const INSETS = { left: 40, right: 70, top: 96, bottom: 96 }
 
-export function LessonCanvas({ lesson, stepIdx, timeline, paused, speed, replay, progressEl, onActive, onDone }: Props) {
+export function LessonCanvas({ lesson, stepIdx, timeline, paused, speed, replay, progressEl, onActive, onDone, ghostId, overlay }: Props) {
   const step = lesson.steps[stepIdx]
   const [t, setT] = useState(0)
   const vp = useRef<ViewportApi>(null)
@@ -61,10 +74,15 @@ export function LessonCanvas({ lesson, stepIdx, timeline, paused, speed, replay,
   // on a tall, narrow canvas (phones) lay the diagram out top‑to‑bottom instead of left‑to‑right
   const wrap = useRef<HTMLDivElement>(null)
   const [portrait, setPortrait] = useState(false)
+  const [size, setSize] = useState({ w: 0, h: 0 })
+  const [view, setView] = useState<View | null>(null)
   useEffect(() => {
     const el = wrap.current?.parentElement
     if (!el) return
-    const ro = new ResizeObserver(() => setPortrait(el.clientHeight > el.clientWidth * 0.9 && el.clientWidth < 700))
+    const ro = new ResizeObserver(() => {
+      setSize({ w: el.clientWidth, h: el.clientHeight })
+      setPortrait(el.clientHeight > el.clientWidth * 0.9 && el.clientWidth < 700)
+    })
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
@@ -124,13 +142,15 @@ export function LessonCanvas({ lesson, stepIdx, timeline, paused, speed, replay,
     }
   }
 
-  const involved = new Set<string>(step?.focus ?? [])
-  if (step?.focus) for (const tm of timeline.msgs) tm.path.forEach((n) => involved.add(n))
+  // no spotlight while the missing-piece puzzle is up
+  const focus = ghostId ? undefined : step?.focus
+  const involved = new Set<string>(focus ?? [])
+  if (focus) for (const tm of timeline.msgs) tm.path.forEach((n) => involved.add(n))
 
   return (
     <>
       <div ref={wrap} style={{ display: 'none' }} />
-      <Viewport ref={vp} bounds={bounds} insets={portrait ? { left: 20, right: 20, top: 30, bottom: 90 } : INSETS} fitKey={`${lesson.id}:${portrait}`} maxFitZoom={1.35}>
+      <Viewport ref={vp} bounds={bounds} insets={portrait ? { left: 20, right: 20, top: 70, bottom: 80 } : size.w > 1050 ? { ...INSETS, right: 430 } : INSETS} fitKey={`${lesson.id}:${portrait}:${size.w > 1050}`} maxFitZoom={1.05} onView={setView}>
         <svg className="wires" width="1" height="1">
           {lesson.links.map(([a, b, label]) => {
             const p = pos[a]
@@ -162,7 +182,8 @@ export function LessonCanvas({ lesson, stepIdx, timeline, paused, speed, replay,
             r={R}
             label={n.label}
             sub={n.sub}
-            className={`${step?.focus && !involved.has(n.id) ? 'dim' : ''} ${step?.focus?.includes(n.id) ? 'focus' : ''} ${arriving.has(n.id) ? 'ping' : ''}`}
+            ghost={ghostId === n.id}
+            className={`${focus && !involved.has(n.id) ? 'dim' : ''} ${focus?.includes(n.id) ? 'focus' : ''} ${arriving.has(n.id) ? 'ping' : ''}`}
           />
         ))}
         {Object.entries(tables).map(([id, tb]) => {
@@ -197,6 +218,13 @@ export function LessonCanvas({ lesson, stepIdx, timeline, paused, speed, replay,
         )}
         {packets}
       </Viewport>
+      {overlay && view && size.w > 0 &&
+        overlay({
+          screen: Object.fromEntries(Object.entries(pos).map(([id, p]) => [id, { x: p.x * view.k + view.x, y: p.y * view.k + view.y }])),
+          r: R * view.k,
+          w: size.w,
+          h: size.h,
+        })}
       <div className="canvas-tools">
         <button className="ibtn sm" onClick={() => vp.current?.zoomBy(1.2)} aria-label="Zoom in"><Plus size={15} /></button>
         <button className="ibtn sm" onClick={() => vp.current?.zoomBy(1 / 1.2)} aria-label="Zoom out"><Minus size={15} /></button>
