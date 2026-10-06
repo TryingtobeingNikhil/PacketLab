@@ -62,14 +62,26 @@ export const Viewport = forwardRef<ViewportApi, Props>(function Viewport(
   const latest = useRef({ bounds, insets, maxFitZoom })
   latest.current = { bounds, insets, maxFitZoom }
 
+  // keep the callback in a ref: if `apply` changed identity on every render, `fit` would too,
+  // and the refit effects below would snap the view back on every re-render
+  const onViewRef = useRef(onView)
+  onViewRef.current = onView
   const apply = useCallback((v: View) => {
     setView(v)
-    onView?.(v)
-  }, [onView])
+    onViewRef.current?.(v)
+  }, [])
+
+  // once the user zooms or pans by hand, automatic refits (resizes, panel toggles) leave the view alone
+  const touched = useRef(false)
+  const move = useCallback((v: View) => {
+    touched.current = true
+    apply(v)
+  }, [apply])
 
   const fit = useCallback(() => {
     const c = el.current
     if (!c) return
+    touched.current = false
     const { bounds: b, insets: i, maxFitZoom: mz } = latest.current
     const W = c.clientWidth - i.left - i.right
     const H = c.clientHeight - i.top - i.bottom
@@ -83,8 +95,8 @@ export const Viewport = forwardRef<ViewportApi, Props>(function Viewport(
     const v = viewRef.current
     const k = Math.min(2.5, Math.max(0.15, v.k * f))
     const r = k / v.k
-    apply({ k, x: cx - (cx - v.x) * r, y: cy - (cy - v.y) * r })
-  }, [apply])
+    move({ k, x: cx - (cx - v.x) * r, y: cy - (cy - v.y) * r })
+  }, [move])
 
   const api: ViewportApi = {
     view,
@@ -110,16 +122,20 @@ export const Viewport = forwardRef<ViewportApi, Props>(function Viewport(
   // refit when insets change (panels toggled) or window resizes
   const insetKey = `${insets.left},${insets.right},${insets.top},${insets.bottom}`
   useEffect(() => {
-    const t = setTimeout(fit, 30)
+    const t = setTimeout(() => !touched.current && fit(), 30)
     return () => clearTimeout(t)
   }, [insetKey, fit])
   useEffect(() => {
     const c = el.current
     if (!c) return
     let t: ReturnType<typeof setTimeout>
+    let last = `${c.clientWidth}x${c.clientHeight}`
     const ro = new ResizeObserver(() => {
+      const size = `${c.clientWidth}x${c.clientHeight}`
+      if (size === last) return
+      last = size
       clearTimeout(t)
-      t = setTimeout(fit, 60)
+      t = setTimeout(() => !touched.current && fit(), 60)
     })
     ro.observe(c)
     return () => ro.disconnect()
@@ -137,12 +153,12 @@ export const Viewport = forwardRef<ViewportApi, Props>(function Viewport(
         zoomAt(Math.exp(-e.deltaY * 0.0045), e.clientX - r.left, e.clientY - r.top)
       } else {
         const v = viewRef.current
-        apply({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY })
+        move({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY })
       }
     }
     c.addEventListener('wheel', onWheel, { passive: false })
     return () => c.removeEventListener('wheel', onWheel)
-  }, [zoomAt, apply])
+  }, [zoomAt, move])
 
   // drag background to pan; two-finger pinch on touch
   const pointers = useRef(new Map<number, { x: number; y: number }>())
@@ -172,7 +188,7 @@ export const Viewport = forwardRef<ViewportApi, Props>(function Viewport(
       return
     }
     const v = viewRef.current
-    apply({ ...v, x: v.x + (e.clientX - prev.x), y: v.y + (e.clientY - prev.y) })
+    move({ ...v, x: v.x + (e.clientX - prev.x), y: v.y + (e.clientY - prev.y) })
   }
   const onPointerUp = (e: React.PointerEvent) => {
     pointers.current.delete(e.pointerId)
