@@ -335,7 +335,7 @@ input[type='range']::-moz-range-thumb { width: 14px; height: 14px; border-radius
 .cta { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 
 /* ================= sandbox: scope strip ================= */
-.scope { flex: none; height: 150px; display: grid; grid-template-columns: 300px repeat(3, minmax(0, 1fr)); background: var(--surface); border-top: 1px solid var(--line); }
+.scope { flex: none; height: 170px; display: grid; grid-template-columns: 300px repeat(3, minmax(0, 1fr)); background: var(--surface); border-top: 1px solid var(--line); }
 .scope > div { padding: 12px 14px 10px; min-width: 0; display: flex; flex-direction: column; }
 .scope > div + div { border-left: 1px solid var(--line); }
 .throttle .big { font-family: var(--mono); font-size: 30px; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; }
